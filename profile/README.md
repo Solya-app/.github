@@ -5,6 +5,7 @@
 - [Solya Data Platform](https://github.com/Solya-app/solya-data-platform)
 - [Solya Agent](https://github.com/Solya-app/solya-agent)
 - [Solya MCP Server](https://github.com/Solya-app/solya-mcp-server)
+- [Solya Data Exporter](https://github.com/Solya-app/solya-data-exporter)
 - [Solya Infra](https://github.com/Solya-app/solya-infra)
 
 ## Product Overview
