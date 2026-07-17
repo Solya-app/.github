@@ -85,8 +85,97 @@ filter by domain or type.
 
 ---
 
-## Product overview
+## Architecture overview
 
-<p align="center">
-  <img src="./assets/solya-overview.png" alt="Solya Product Overview" width="800" />
-</p>
+From client point-of-sale data to the app, the AI agent and the POS — how the repos fit together.
+
+```mermaid
+flowchart TB
+  user([App user])
+
+  subgraph SRC["Client POS systems"]
+    pos["Polaris · Cegid · LCVMag<br/>point-of-sale databases"]
+  end
+
+  subgraph ING["Ingestion"]
+    lcv["solya-lcv-extractor<br/>LCVMag .FIC → CSV"]
+    exporter["solya-data-exporter<br/>backups → cloud storage"]
+    blob[("Azure Blob Storage")]
+  end
+
+  subgraph PLAT["Data platform · Databricks — solya-data-platform"]
+    bronze[("Bronze<br/>raw")]
+    silver[("Silver<br/>cleaned")]
+    gold[("Gold<br/>metrics · forecasts")]
+    ml["ML · forecasting<br/>image classification"]
+  end
+
+  subgraph APP["Application"]
+    solyaapp["solya-app<br/>Next.js platform"]
+    posapp["solya-pos<br/>caisse · centrale · staff"]
+    cli["solya-cli"]
+    pg[("PostgreSQL")]
+  end
+
+  subgraph IAM["Identity & access"]
+    keycloak["Keycloak<br/>solya-keycloak theme"]
+    authsvc["solya-auth<br/>roles → permissions"]
+  end
+
+  subgraph AI["AI & MCP"]
+    agent["solya-agent<br/>NL agent · FastAPI"]
+    mcp["solya-mcp-server<br/>analytics tools"]
+    apimcp["solya-api-mcp<br/>REST API gateway"]
+  end
+
+  subgraph DSN["Design"]
+    ds["solya-design-system"]
+    ux["ux-ui-refacto"]
+  end
+
+  pos --> exporter
+  lcv -.-> exporter
+  exporter --> blob
+  blob --> bronze
+  bronze --> silver
+  silver --> gold
+  silver --- ml
+  ml --- gold
+  gold --> pg
+
+  user --> solyaapp
+  solyaapp --> pg
+  posapp --> pg
+  cli --> solyaapp
+  solyaapp --> keycloak
+  keycloak --- authsvc
+  authsvc -. reads .-> pg
+
+  user --> agent
+  agent --> mcp
+  mcp --> pg
+  mcp --> gold
+  agent --> apimcp
+  apimcp --> solyaapp
+
+  ds --> solyaapp
+  ds --> posapp
+  ux -. specs .-> solyaapp
+
+  classDef src fill:#eef2ff,stroke:#6366f1,color:#111
+  classDef data fill:#fff7ed,stroke:#f59e0b,color:#111
+  classDef app fill:#ecfdf5,stroke:#10b981,color:#111
+  classDef iam fill:#fef2f2,stroke:#ef4444,color:#111
+  classDef ai fill:#faf5ff,stroke:#a855f7,color:#111
+  classDef dsn fill:#f0fdfa,stroke:#14b8a6,color:#111
+  class pos,lcv,exporter,blob src
+  class bronze,silver,gold,ml data
+  class solyaapp,posapp,cli,pg app
+  class keycloak,authsvc iam
+  class agent,mcp,apimcp ai
+  class ds,ux dsn
+```
+
+**Shared libraries** used across the above: [solya-python-utilities](https://github.com/Solya-app/solya-python-utilities) (common helpers) and [sparkless](https://github.com/Solya-app/sparkless) (fast PySpark test replacement). **Go-To-Market**, **website** and **docs** repos are listed in the tables above and sit outside the product runtime.
+
+> This diagram is defined in Mermaid right here in `profile/README.md` — edit the code block to keep it current, no image export needed.
